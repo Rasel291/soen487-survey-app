@@ -1,0 +1,22 @@
+# Node modules
+node_modules/
+**/node_modules/
+
+# Environment variables
+.env
+*.env
+
+# Build outputs
+dist/
+build/
+**/dist/
+**/build/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE / editor files
+.vscode/
+.idea/
+*.sublime-*
