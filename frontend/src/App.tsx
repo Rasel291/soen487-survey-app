@@ -1,13 +1,46 @@
-import React, { useEffect } from 'react';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import AdminSurveys from './pages/AdminSurveys';
+import SurveyForm from './pages/SurveyForm';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './pages/Login';
+
 
 function App() {
-  useEffect(() => {
-    fetch('http://localhost:5000/api/health')
-      .then(res => res.json())
-      .then(data => console.log('Backend says:', data))
-      .catch(err => console.error('Error:', err));
-  }, []);
-
-  return <div>Survey App Frontend</div>;
+  return (
+    <BrowserRouter>
+      <Routes>
+        {
+        <Route path="/login" element={<Login />} />
+        }
+        <Route
+          path="/admin/surveys"
+          element={
+            <ProtectedRoute redirectTo="/login">
+              <AdminSurveys />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/surveys/new"
+          element={
+            <ProtectedRoute redirectTo="/login">
+              <SurveyForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/surveys/edit/:id"
+          element={
+            <ProtectedRoute redirectTo="/login">
+              <SurveyForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/" element={<Navigate to="/admin/surveys" />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
+
 export default App;
