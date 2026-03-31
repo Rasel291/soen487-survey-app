@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { Question, QuestionType } from '../types/survey';
 
 // Helper: get today's date 
 const getTodayUTC = () => {
@@ -18,6 +19,7 @@ const SurveyForm: React.FC = () => {
     const [expiryDate, setExpiryDate] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [questions, setQuestions] = useState<Question[]>([]);
 
     useEffect(() => {
         if (id) {
@@ -31,6 +33,9 @@ const SurveyForm: React.FC = () => {
                         const utcDate = survey.expiryDate.split('T')[0];
                         setExpiryDate(utcDate);
                     }
+                    if (survey.questions) {
+                        setQuestions(survey.questions);
+                    }
                 } catch (err) {
                     console.error(err);
                     setError('Failed to load survey');
@@ -40,16 +45,69 @@ const SurveyForm: React.FC = () => {
         }
     }, [id]);
 
+    const addQuestion = (type: QuestionType) => {
+        const newQuestion: Question = {
+            id: Date.now().toString(),
+            text: '',
+            type,
+            required: false,
+            ...(type === 'multiple_choice' || type === 'checkbox' ? { options: ['Option 1'] } : {}),
+            ...(type === 'rating' ? { scaleMin: 1, scaleMax: 5 } : {})
+        };
+        setQuestions([...questions, newQuestion]);
+    };
+
+    const updateQuestion = (index: number, field: keyof Question, value: any) => {
+        const updatedQuestions = [...questions];
+        updatedQuestions[index] = { ...updatedQuestions[index], [field]: value };
+        setQuestions(updatedQuestions);
+    };
+
+    const removeQuestion = (index: number) => {
+        setQuestions(questions.filter((_, i) => i !== index));
+    };
+
+    const addOption = (questionIndex: number) => {
+        const updatedQuestions = [...questions];
+        const q = updatedQuestions[questionIndex];
+        if (q.options) {
+            q.options.push(`Option ${q.options.length + 1}`);
+            setQuestions(updatedQuestions);
+        }
+    };
+
+    const updateOption = (questionIndex: number, optionIndex: number, value: string) => {
+        const updatedQuestions = [...questions];
+        const q = updatedQuestions[questionIndex];
+        if (q.options) {
+            q.options[optionIndex] = value;
+            setQuestions(updatedQuestions);
+        }
+    };
+
+    const removeOption = (questionIndex: number, optionIndex: number) => {
+        const updatedQuestions = [...questions];
+        const q = updatedQuestions[questionIndex];
+        if (q.options && q.options.length > 1) { // Keep at least one option
+            q.options = q.options.filter((_, i) => i !== optionIndex);
+            setQuestions(updatedQuestions);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!title.trim() || !description.trim() || !expiryDate) {
             setError('All fields are required');
             return;
         }
-
+        if (questions.length === 0) {
+            setError("Please add at least one question");
+            return;
+        }
+        
         setLoading(true);
         try {
-            const payload = { title, description, expiryDate };
+            const payload = { title, description, expiryDate, questions };
             if (id) {
                 await api.put(`/surveys/${id}`, payload);
             } else {
@@ -118,6 +176,102 @@ const SurveyForm: React.FC = () => {
                                     required
                                 />
                             </div>
+
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-xl font-semibold text-gray-800">Questions</h2>
+                                    <div className="space-x-2">
+                                        <select 
+                                            onChange={(e) => {
+                                                if(e.target.value) {
+                                                    addQuestion(e.target.value as QuestionType);
+                                                    e.target.value = ''; 
+                                                }
+                                            }}
+                                            className="border rounded px-3 py-1.5 text-sm bg-gray-50"
+                                            defaultValue=""
+                                        >
+                                            <option value="" disabled>+ Add Question</option>
+                                            <option value="short_answer">Short Answer</option>
+                                            <option value="multiple_choice">Multiple Choice</option>
+                                            <option value="checkbox">Checkboxes</option>
+                                            <option value="rating">Rating Scale</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {questions.map((q, qIndex) => (
+                                    <div key={q.id} className="p-5 border border-gray-200 rounded-lg bg-gray-50 relative">
+                                        <button type="button" onClick={() => removeQuestion(qIndex)} className="absolute top-4 right-4 text-red-500 hover:text-red-700 text-sm font-medium">Delete</button>
+                                        
+                                        <div className="space-y-4 pr-16">
+                                            <div className="flex gap-4 items-start">
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Question text" 
+                                                    value={q.text} 
+                                                    onChange={(e) => updateQuestion(qIndex, 'text', e.target.value)}
+                                                    className="flex-1 border border-gray-300 rounded-md px-3 py-2"
+                                                    required
+                                                />
+                                                <label className="flex items-center space-x-2 mt-2">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={q.required} 
+                                                        onChange={(e) => updateQuestion(qIndex, 'required', e.target.checked)} 
+                                                    />
+                                                    <span className="text-sm text-gray-600">Required</span>
+                                                </label>
+                                            </div>
+
+                                            {(q.type === 'multiple_choice' || q.type === 'checkbox') && (
+                                                <div className="pl-4 space-y-2 border-l-2 border-indigo-200">
+                                                    {q.options?.map((opt, oIndex) => (
+                                                        <div key={oIndex} className="flex items-center space-x-2">
+                                                            <div className={`w-4 h-4 border border-gray-400 ${q.type === 'multiple_choice' ? 'rounded-full' : 'rounded-sm'}`}></div>
+                                                            <input 
+                                                                type="text" 
+                                                                value={opt} 
+                                                                onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
+                                                                className="flex-1 border-b border-gray-300 bg-transparent px-2 py-1 focus:outline-none focus:border-indigo-500 text-sm"
+                                                                required
+                                                            />
+                                                            <button type="button" onClick={() => removeOption(qIndex, oIndex)} className="text-gray-400 hover:text-red-500 text-xl">&times;</button>
+                                                        </div>
+                                                    ))}
+                                                    <button type="button" onClick={() => addOption(qIndex)} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium mt-2">+ Add Option</button>
+                                                </div>
+                                            )}
+
+                                            {q.type === 'rating' && (
+                                                <div className="pl-4 flex items-center space-x-4">
+                                                    <div>
+                                                        <label className="text-sm text-gray-500">Min:</label>
+                                                        <input type="number" value={q.scaleMin} onChange={(e) => updateQuestion(qIndex, 'scaleMin', parseInt(e.target.value))} className="w-16 ml-2 border rounded px-2 py-1" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-sm text-gray-500">Max:</label>
+                                                        <input type="number" value={q.scaleMax} onChange={(e) => updateQuestion(qIndex, 'scaleMax', parseInt(e.target.value))} className="w-16 ml-2 border rounded px-2 py-1" />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {q.type === 'short_answer' && (
+                                                <div className="pl-4">
+                                                    <div className="w-full border-b border-gray-300 py-2 text-gray-400 text-sm">Short answer text will go here...</div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                                {questions.length === 0 && (
+                                    <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-200 rounded-lg">
+                                        No questions added yet.
+                                    </div>
+                                )}
+                            </div>
+
+
                             <div className="flex justify-end space-x-3 pt-4">
                                 <button
                                     type="button"
