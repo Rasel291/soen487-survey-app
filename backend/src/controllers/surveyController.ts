@@ -21,7 +21,25 @@ const formatSurvey = (doc: admin.firestore.DocumentSnapshot): Survey | null => {
         published: data.published,
         createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : null,
         createdBy: data.createdBy,
+        questions: data.questions || [],
     };
+};
+
+const formatQuestions = (questions: any[]) => {
+    return questions.map(q => {
+        const clean: any = {
+            id: q.id,
+            text: q.text,
+            type: q.type,
+            required: q.required,
+        };
+
+        if (q.options !== undefined) clean.options = q.options;
+        if (q.scaleMin !== undefined) clean.scaleMin = q.scaleMin;
+        if (q.scaleMax !== undefined) clean.scaleMax = q.scaleMax;
+
+        return clean;
+    });
 };
 
 // GET /api/surveys
@@ -56,12 +74,12 @@ export const getSurveyById = async (req: Request, res: Response) => {
 // POST /api/surveys
 export const createSurvey = async (req: Request, res: Response) => {
     try {
-        const { title, description, expiryDate } = req.body;
+        const { title, description, expiryDate, questions } = req.body;
         if (!title || !description || !expiryDate) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
-
         const expiryTimestamp = toUTCTimestamp(expiryDate);
+        const cleanQuestions = formatQuestions(questions);
 
         const newSurvey = {
             title: title.trim(),
@@ -70,6 +88,7 @@ export const createSurvey = async (req: Request, res: Response) => {
             published: false,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             createdBy: (req as any).user.uid,
+            questions: cleanQuestions,
         };
 
         const docRef = await db.collection('surveys').add(newSurvey);
@@ -82,6 +101,7 @@ export const createSurvey = async (req: Request, res: Response) => {
             published: newSurvey.published,
             createdAt: new Date().toISOString(),
             createdBy: newSurvey.createdBy,
+            questions: newSurvey.questions,
         };
         res.status(201).json(createdData);
     } catch (error) {
@@ -94,7 +114,7 @@ export const createSurvey = async (req: Request, res: Response) => {
 export const updateSurvey = async (req: Request, res: Response) => {
     try {
         const surveyId = req.params.id as string;
-        const { title, description, expiryDate } = req.body;
+        const { title, description, expiryDate, questions } = req.body;
         const surveyRef = db.collection('surveys').doc(surveyId);
         const doc = await surveyRef.get();
 
@@ -108,11 +128,13 @@ export const updateSurvey = async (req: Request, res: Response) => {
         if (expiryDate !== undefined) {
             updates.expiryDate = toUTCTimestamp(expiryDate);
         }
+        if (questions !== undefined) {
+            updates.questions = formatQuestions(questions); 
+        }
 
         if (Object.keys(updates).length === 0) {
             return res.status(400).json({ error: 'No fields to update' });
         }
-
         await surveyRef.update(updates);
         res.json({ message: 'Survey updated successfully' });
     } catch (error) {
