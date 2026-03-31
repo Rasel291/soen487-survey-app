@@ -15,30 +15,10 @@ export interface Survey {
 
 interface Question {
     id?: string;
-    type: 'text' | 'multiple-choice' | 'checkbox';
-    questionText: string;
+    text: string;
+    type: 'text' | 'multiple_choice' | 'checkbox' | 'short_answer';
     options?: string[];
 }
-
-const fallbackQuestions: Question[] = [
-    {
-        id: "q1",
-        type: "text",
-        questionText: "What do you like most about our product?"
-    },
-    {
-        id: "q2",
-        type: "multiple-choice",
-        questionText: "How often do you use our product?",
-        options: ["Daily", "Weekly", "Monthly", "Rarely"]
-    },
-    {
-        id: "q3",
-        type: "checkbox",
-        questionText: "Which features do you use?",
-        options: ["Feature A", "Feature B", "Feature C", "Feature D"]
-    }
-];
 
 const SurveyAccess = () => {
 
@@ -48,10 +28,7 @@ const SurveyAccess = () => {
         const response = await api.get(`/surveys/${id}`);
         const survey = response.data as Survey;
         console.log("Fetched Survey:", response.data);
-        setSurvey({
-            ...survey,
-            questions: survey.questions && survey.questions.length > 0 ? survey.questions : fallbackQuestions,
-        });
+        setSurvey(survey);
     }, [id]);
 
     const submitResponse = async () => {
@@ -131,8 +108,8 @@ const SurveyAccess = () => {
 
                             return (
                                 <div key={index} className="mb-4">
-                                    <p className="font-semibold">{question.questionText}</p>
-                                    {question.type === 'multiple-choice' && question.options && (
+                                    <p className="font-semibold">{question.text}</p>
+                                    {question.type === 'multiple_choice' && question.options && (
                                         <div className="mt-2 space-y-2 flex flex-col">
                                             {question.options.map((option, idx) => (
                                                 <div key={idx} className="inline-flex items-center">
@@ -177,7 +154,7 @@ const SurveyAccess = () => {
                                             ))}
                                         </div>
                                     )}
-                                    {question.type === 'text' && (
+                                    {question.type === 'short_answer' && (
                                         <input
                                             type="text"
                                             className="w-full border border-gray-300 rounded-md p-2 mt-1"

@@ -5,6 +5,7 @@ export const sumbitResponse = async (req: Request, res: Response) => {
         const surveyId = req.params.id as string;
         const { answers } = req.body;
 
+    
         if (!answers || typeof answers !== 'object') {
             return res.status(400).json({ error: 'Invalid answers format' });
         }
