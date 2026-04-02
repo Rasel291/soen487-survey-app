@@ -15,12 +15,14 @@ export interface Question {
 }
 
 export interface Survey {
-    id: string;
-    title: string;
-    description: string;
-    expiryDate: string;
-    published: boolean;
-    createdAt: any;
-    createdBy: string;
-    questions: Question[];
+  id: string;
+  title: string;
+  description: string;
+  expiryDate: string;
+  published: boolean;
+  publicLinkToken?: string | null;   
+  createdAt: any;
+  createdBy: string;
+  questions: Question[];
+  isExpired?: boolean;   
 }

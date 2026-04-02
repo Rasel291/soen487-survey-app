@@ -15,12 +15,14 @@ export interface Question {
 }
 
 export interface Survey {
-    id?: string;
-    title: string;
-    description: string;
-    expiryDate: string; // ISO string (UTC)
-    published: boolean;
-    createdAt: string;  // ISO string (UTC)
-    createdBy: string;  // Firebase UID
-    questions: Question[];
+  id?: string;
+  title: string;
+  description: string;
+  expiryDate: string; // ISO string (UTC)
+  published: boolean;
+  publicLinkToken?: string | null;
+  createdAt: string;
+  createdBy: string;
+  questions: any[];
+  isExpired?: boolean;   // virtual, computed in backend
 }
