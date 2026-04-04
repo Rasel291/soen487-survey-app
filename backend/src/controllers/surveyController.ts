@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { db, admin } from '../services/firebase';
 import { Survey } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { SurveyAccessValidator } from '../validator/surveyAccessValidator';
 
 // Helper: Convert YYYY-MM-DD string 
 const toUTCTimestamp = (dateString: string) => {
@@ -46,6 +47,13 @@ const formatQuestions = (questions: any[]) => {
     });
 };
 
+const isExpiredSurvey = (expiryDate: any) => {
+    if (!expiryDate || typeof expiryDate.toDate !== 'function') {
+        return false;
+    }
+    return expiryDate.toDate() < new Date();
+};
+
 // GET /api/surveys
 export const getSurveys = async (req: Request, res: Response) => {
     try {
@@ -72,6 +80,57 @@ export const getSurveyById = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error fetching survey:', error);
         res.status(500).json({ error: 'Failed to fetch survey' });
+    }
+};
+
+export const getPublicSurveyByToken = async (req: Request, res: Response) => {
+    try {
+        const surveyId = req.params.id as string;
+        const token = (req.query.token as string | undefined)?.trim();
+
+        if (!token) {
+            return res.status(400).json({ error: 'Survey token is required' });
+        }
+
+        const surveyRef = db.collection('surveys').doc(surveyId);
+        const doc = await surveyRef.get();
+
+        if (!doc.exists) {
+            return res.status(404).json({ error: 'Survey not found' });
+        }
+
+        const validator = new SurveyAccessValidator();
+        const validationError = validator.validate(doc.data(), token);
+
+        if (validationError) {
+            return res.status(validationError.status).json({ error: validationError.message });
+        }
+
+        const existingSubmission = await db.collection('responses')
+            .where('surveyId', '==', surveyId)
+            .where('accessToken', '==', token)
+            .limit(1)
+            .get();
+
+        if (!existingSubmission.empty) {
+            return res.status(409).json({ error: 'This survey link has already been used' });
+        }
+
+        const formatted = formatSurvey(doc);
+        if (!formatted) {
+            return res.status(404).json({ error: 'Survey not found' });
+        }
+
+        res.json({
+            id: formatted.id,
+            title: formatted.title,
+            description: formatted.description,
+            expiryDate: formatted.expiryDate,
+            questions: formatted.questions,
+        });
+    } catch (error) {
+        console.error('Error fetching public survey:', error);
+        res.status(500).json({ error: 'Failed to load survey' });
     }
 };
 
@@ -196,7 +255,7 @@ export const publishSurvey = async (req: Request, res: Response) => {
             publicLinkToken: token,
         });
 
-        const link = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/survey/${surveyId}?token=${token}`;
+        const link = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/surveys/${surveyId}?token=${token}`;
         res.json({ message: 'Survey published', link });
     } catch (error) {
         console.error('Error publishing survey:', error);
