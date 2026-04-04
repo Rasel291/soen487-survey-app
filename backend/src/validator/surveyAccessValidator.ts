@@ -1,6 +1,6 @@
-import { isExpiredSurvey } from "../controllers/responseController";
+import { isExpiredSurvey } from "../controllers/surveyController";
 
-interface ValidationError {
+export interface ValidationError {
     status: number;
     message: string;
 }
