@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import surveyRoutes from './routes/surveyRoutes';
+import responseRoutes from './routes/responseRoutes';
 import { db } from './services/firebase';
 
 dotenv.config();
@@ -15,6 +16,7 @@ db.collection('test').get()
   .catch(err => console.error('Firestore error:', err));
 
 app.use('/api/surveys', surveyRoutes);
+app.use('/api/responses', responseRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK' });

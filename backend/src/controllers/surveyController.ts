@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { db, admin } from '../services/firebase';
 import { Survey } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import { SurveyService } from '../services/surveyService';
 
 // Helper: Convert YYYY-MM-DD string 
 const toUTCTimestamp = (dateString: string) => {
@@ -11,7 +12,7 @@ const toUTCTimestamp = (dateString: string) => {
 };
 
 // Helper: Convert Firestore document to a JSON-friendly object
-const formatSurvey = (doc: admin.firestore.DocumentSnapshot): Survey | null => {
+export const formatSurvey = (doc: admin.firestore.DocumentSnapshot): Survey | null => {
     const data = doc.data();
     if (!data) return null;
     const expiryDate = data.expiryDate ? data.expiryDate.toDate() : null;
@@ -46,6 +47,13 @@ const formatQuestions = (questions: any[]) => {
     });
 };
 
+export const isExpiredSurvey = (expiryDate: any) => {
+    if (!expiryDate || typeof expiryDate.toDate !== 'function') {
+        return false;
+    }
+    return expiryDate.toDate() < new Date();
+};
+
 // GET /api/surveys
 export const getSurveys = async (req: Request, res: Response) => {
     try {
@@ -73,6 +81,16 @@ export const getSurveyById = async (req: Request, res: Response) => {
         console.error('Error fetching survey:', error);
         res.status(500).json({ error: 'Failed to fetch survey' });
     }
+};
+
+export const getPublicSurveyByToken = async (req: Request, res: Response) => {
+    const token = (req.query.token as string | undefined)?.trim();
+    const surveyId = req.params.id as string;
+    if (!token)
+        return res.status(400).json({ error: 'Survey token is required' });
+
+    const survey = await SurveyService.getPublicSurvey(surveyId, token);
+    res.json(survey);
 };
 
 // POST /api/surveys
@@ -196,7 +214,7 @@ export const publishSurvey = async (req: Request, res: Response) => {
             publicLinkToken: token,
         });
 
-        const link = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/survey/${surveyId}?token=${token}`;
+        const link = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/surveys/${surveyId}?token=${token}`;
         res.json({ message: 'Survey published', link });
     } catch (error) {
         console.error('Error publishing survey:', error);

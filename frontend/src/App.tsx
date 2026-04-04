@@ -4,6 +4,7 @@ import AdminSurveys from './pages/AdminSurveys';
 import SurveyForm from './pages/SurveyForm';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
+import SurveyAcess from './pages/Survey';
 
 
 function App() {
@@ -37,6 +38,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+            path="/surveys/:id"
+          element={<SurveyAcess />}
+        />
+        <Route
+          path="/survey/:id"
+          element={<SurveyAcess />}
+          />
         <Route path="/" element={<Navigate to="/admin/surveys" />} />
       </Routes>
     </BrowserRouter>
