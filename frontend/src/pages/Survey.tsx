@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import api from "../services/api";
 
 export interface Survey {
@@ -16,30 +16,97 @@ export interface Survey {
 interface Question {
     id?: string;
     text: string;
-    type: 'text' | 'multiple_choice' | 'checkbox' | 'short_answer';
+    type: 'multiple_choice' | 'checkbox' | 'short_answer' | 'rating';
+    required?: boolean;
     options?: string[];
+    scaleMin?: number;
+    scaleMax?: number;
 }
 
 const SurveyAccess = () => {
 
     const { id } = useParams();
-
-    const fetchSurvey = useCallback(async () => {
-        const response = await api.get(`/surveys/${id}`);
-        const survey = response.data as Survey;
-        console.log("Fetched Survey:", response.data);
-        setSurvey(survey);
-    }, [id]);
-
-    const submitResponse = async () => {
-        const response = await api.post(`/responses/${id}`, {
-            answers: answers,
-        });
-        console.log("Submit Response Result:", response.data);
-    }
+    const [searchParams] = useSearchParams();
+    const linkToken = searchParams.get('token') || '';
 
     const [survey, setSurvey] = useState<Survey | null>(null);
     const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [submitError, setSubmitError] = useState('');
+    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [hasStarted, setHasStarted] = useState(false);
+
+    const mapApiErrorMessage = (status?: number, fallback?: string) => {
+        if (status === 400)
+            return 'The survey link is invalid. Please check the URL and try again.';
+        if (status === 403)
+            return 'This survey link is invalid or no longer available.';
+        if (status === 404)
+            return 'Survey not found. Please verify the link.';
+        if (status === 409)
+            return 'This survey link has already been used.';
+        if (status === 410)
+            return 'This survey has expired.';
+        return fallback || 'Something went wrong. Please try again later.';
+    };
+
+    const fetchSurvey = useCallback(async () => {
+        if (!id || !linkToken) {
+            setError('Missing survey token in link.');
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const response = await api.get(`/surveys/public/${id}`, {
+                params: { token: linkToken },
+            });
+
+            const surveyData = response.data as Survey;
+            setSurvey(surveyData);
+            setError('');
+        } catch (err: any) {
+            const status = err?.response?.status;
+            const message = err?.response?.data?.error;
+
+            if (status === 409) {
+                setIsSubmitted(true);
+            }
+
+            setError(mapApiErrorMessage(status, message));
+        } finally {
+            setLoading(false);
+        }
+    }, [id, linkToken]);
+
+    const submitResponse = async () => {
+        if (!id || !linkToken) {
+            setSubmitError('Invalid survey link.');
+            return;
+        }
+
+        setSubmitError('');
+        setIsSubmitting(true);
+        try {
+            await api.post(
+                `/responses/public/${id}`,
+                { answers },
+                { params: { token: linkToken } }
+            );
+            setIsSubmitted(true);
+        } catch (err: any) {
+            const status = err?.response?.status;
+            const message = err?.response?.data?.error;
+            setSubmitError(mapApiErrorMessage(status, message));
+            if (status === 409) {
+                setIsSubmitted(true);
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
 
     const handleTextChange = (questionId: string, value: string) => {
         setAnswers((prev) => ({
@@ -73,19 +140,55 @@ const SurveyAccess = () => {
     };
 
     useEffect(() => {
-        console.log("Current Answers:", answers);
-    }, [answers]);
-
-    useEffect(() => {
         fetchSurvey();
     }, [fetchSurvey]);
 
-    if (survey === null) {
+    if (loading) {
         return (
             <div className="flex flex-col items-center mt-48 h-screen">
                 <p className="text-xl font-bold">Loading survey...</p>
             </div>
         )
+    }
+
+    if (isSubmitted) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen px-4">
+                <div className="max-w-xl w-full bg-white border border-gray-200 rounded-lg p-6 text-center">
+                    <h1 className="text-2xl font-bold text-green-700 mb-3">Thank you!</h1>
+                    <p className="text-gray-700">Your response has been submitted successfully.</p>
+                    <p className="text-sm text-gray-500 mt-2">This link can no longer be used.</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error || survey === null) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen px-4">
+                <div className="max-w-xl w-full bg-white border border-red-200 rounded-lg p-6">
+                    <h1 className="text-xl font-bold text-red-700 mb-2">Unable to open survey</h1>
+                    <p className="text-gray-700">{error || 'Survey is unavailable.'}</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!hasStarted) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen px-4">
+                <div className="max-w-2xl w-full bg-white border border-gray-200 rounded-lg p-6">
+                    <h1 className="text-2xl font-bold text-gray-900">{survey.title}</h1>
+                    <p className="text-gray-700 mt-3 whitespace-pre-wrap">{survey.description}</p>
+                    <button
+                        onClick={() => setHasStarted(true)}
+                        className="mt-6 px-5 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                        Start survey
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -97,7 +200,7 @@ const SurveyAccess = () => {
                         <p className="text-sm text-gray-500">{survey.createdAt}</p>
                     </div>
                     <div className="border border-gray-300 rounded-md p-2">
-                        <p className="text-sm text-gray-500"> {id} </p>
+                        <p className="text-sm text-gray-500"> {survey.id} </p>
                     </div>
                 </div>
                 <p>{survey.description}</p>
@@ -163,19 +266,39 @@ const SurveyAccess = () => {
                                             onChange={(event) => handleTextChange(questionId, event.target.value)}
                                         />
                                     )}
+                                    {question.type === 'rating' && (
+                                        <input
+                                            type="number"
+                                            className="w-full border border-gray-300 rounded-md p-2 mt-1"
+                                            min={question.scaleMin ?? 1}
+                                            max={question.scaleMax ?? 5}
+                                            placeholder={`Enter a rating from ${question.scaleMin ?? 1} to ${question.scaleMax ?? 5}`}
+                                            value={typeof answers[questionId] === 'string' ? answers[questionId] : ''}
+                                            onChange={(event) => handleTextChange(questionId, event.target.value)}
+                                        />
+                                    )}
                                 </div>
                             )
                         })}
                     </div>
                 )}
+                {submitError && (
+                    <div className="mt-3 border border-red-200 bg-red-50 text-red-700 rounded-md p-3 text-sm">
+                        {submitError}
+                    </div>
+                )}
                 <div className="mt-4 items-end text-sm text-gray-500 flex justify-between">
                     <div>
-                        <button onClick={submitResponse} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                            Submit
+                        <button
+                            onClick={submitResponse}
+                            disabled={isSubmitting}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-60"
+                        >
+                            {isSubmitting ? 'Submitting...' : 'Submit'}
                         </button>
                     </div>
                     <div>
-                        created by {survey.createdBy}
+                        Expires on {survey.expiryDate ? survey.expiryDate.split('T')[0] : 'N/A'}
                     </div>
                 </div>
             </div>
