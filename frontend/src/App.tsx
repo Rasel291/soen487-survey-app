@@ -40,11 +40,11 @@ function App() {
         />
         <Route
             path="/surveys/:id"
-            element={
-              <ProtectedRoute redirectTo="/login">
-                <SurveyAcess />
-              </ProtectedRoute>
-            }
+          element={<SurveyAcess />}
+        />
+        <Route
+          path="/survey/:id"
+          element={<SurveyAcess />}
           />
         <Route path="/" element={<Navigate to="/admin/surveys" />} />
       </Routes>
