@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { verifyToken } from "../middleware/auth";
-import { sumbitResponse } from "../controllers/responseController";
+import { submitPublicResponse } from "../controllers/responseController";
 
 const router = Router();
 
-router.post("/:id", verifyToken, sumbitResponse);
+router.post("/public/:id", submitPublicResponse);
 
 export default router;
