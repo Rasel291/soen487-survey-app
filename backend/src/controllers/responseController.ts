@@ -29,7 +29,6 @@ export const getSurveyResponses = async (req: Request, res: Response) => {
         if (!surveyDoc.exists) {
             return res.status(404).json({ error: 'Survey not found' });
         }
-
         const snapshot = await db.collection('responses')
             .where('surveyId', '==', surveyId)
             .get();
@@ -44,10 +43,9 @@ export const getSurveyResponses = async (req: Request, res: Response) => {
                 submittedAt: data.submittedAt,
             };
         });
-
         res.json(responses);
     } catch (error) {
-        console.error('Error fetching responses:', error); // <-- check what prints here
+        console.error('Error fetching responses:', error); 
         res.status(500).json({ error: 'Failed to fetch analytics data' });
     }
 };
