@@ -154,6 +154,14 @@ const AdminSurveys: React.FC = () => {
                                                 Delete
                                             </button>
                                         </div>
+                                        {survey.published && (
+                                            <Link 
+                                                to={`/admin/surveys/${survey.id}/analytics`} 
+                                                className="px-3 py-1 rounded-md bg-indigo-100 text-indigo-700 hover:bg-indigo-200 text-sm font-medium transition"
+                                            >
+                                                View Analytics
+                                            </Link>
+                                        )}
                                     </div>
                                 </div>
                             );

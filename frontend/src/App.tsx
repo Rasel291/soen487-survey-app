@@ -5,7 +5,7 @@ import SurveyForm from './pages/SurveyForm';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import SurveyAcess from './pages/Survey';
-
+import SurveyAnalytics from './pages/SurveyAnalytics';
 
 function App() {
   return (
@@ -47,6 +47,7 @@ function App() {
           element={<SurveyAcess />}
           />
         <Route path="/" element={<Navigate to="/admin/surveys" />} />
+        <Route path="/admin/surveys/:id/analytics" element={<SurveyAnalytics />} />
       </Routes>
     </BrowserRouter>
   );
