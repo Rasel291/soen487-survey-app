@@ -10,6 +10,7 @@ import {
   publishSurvey,
   closeSurvey,
 } from "../controllers/surveyController";
+import { getSurveyResponses } from "../controllers/responseController";
 
 const router = Router();
 
@@ -21,5 +22,6 @@ router.put("/:id", verifyToken, updateSurvey);
 router.delete("/:id", verifyToken, deleteSurvey);
 router.post("/:id/publish", verifyToken, publishSurvey);
 router.post("/:id/close", verifyToken, closeSurvey);
+router.get("/:id/responses", verifyToken, getSurveyResponses);
 
 export default router;

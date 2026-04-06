@@ -76,17 +76,16 @@ const AdminSurveys: React.FC = () => {
     return new Date(expiryDate) < new Date();
   };
 
-  if (loading)
-    return (
-      <div className="p-6 text-center text-gray-500">Loading surveys...</div>
-    );
-
   // Helper: format expiry date from ISO string (YYYY-MM-DD)
   const formatExpiry = (isoString: string) => {
     if (!isoString) return "No expiry";
     return isoString.split("T")[0];
   };
 
+  if (loading)
+    return (
+      <div className="p-6 text-center text-gray-500">Loading surveys...</div>
+    );
   return (
     <div className="min-h-screen bg-slate-50 py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -185,6 +184,14 @@ const AdminSurveys: React.FC = () => {
                         Delete
                       </button>
                     </div>
+                    {survey.published && (
+                      <Link
+                        to={`/admin/surveys/${survey.id}/analytics`}
+                        className="px-3 py-1 rounded-md bg-indigo-100 text-indigo-700 hover:bg-indigo-200 text-sm font-medium transition"
+                      >
+                        View Analytics
+                      </Link>
+                    )}
                   </div>
                 </div>
               );
