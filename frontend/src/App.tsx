@@ -1,19 +1,19 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import AdminSurveys from './pages/AdminSurveys';
-import SurveyForm from './pages/SurveyForm';
-import ProtectedRoute from './components/ProtectedRoute';
-import Login from './pages/Login';
-import SurveyAcess from './pages/Survey';
-import SurveyAnalytics from './pages/SurveyAnalytics';
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import AdminSurveys from "./pages/AdminSurveys";
+import SurveyForm from "./pages/SurveyForm";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Register from "./pages/Register";
+import Login from "./pages/Login";
+import SurveyAcess from "./pages/Survey";
+import SurveyAnalytics from "./pages/SurveyAnalytics";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {
         <Route path="/login" element={<Login />} />
-        }
+        <Route path="/register" element={<Register />} />
         <Route
           path="/admin/surveys"
           element={
@@ -38,16 +38,13 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-            path="/surveys/:id"
-          element={<SurveyAcess />}
-        />
-        <Route
-          path="/survey/:id"
-          element={<SurveyAcess />}
-          />
+        <Route path="/surveys/:id" element={<SurveyAcess />} />
+        <Route path="/survey/:id" element={<SurveyAcess />} />
         <Route path="/" element={<Navigate to="/admin/surveys" />} />
-        <Route path="/admin/surveys/:id/analytics" element={<SurveyAnalytics />} />
+        <Route
+          path="/admin/surveys/:id/analytics"
+          element={<SurveyAnalytics />}
+        />
       </Routes>
     </BrowserRouter>
   );
