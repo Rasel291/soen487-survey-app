@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import surveyRoutes from './routes/surveyRoutes';
 import responseRoutes from './routes/responseRoutes';
 import { db } from './services/firebase';
+import participantRoutes from './routes/participantRoutes';
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ db.collection('test').get()
 
 app.use('/api/surveys', surveyRoutes);
 app.use('/api/responses', responseRoutes);
+app.use('/api/participants', participantRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK' });

@@ -26,3 +26,11 @@ export interface Survey {
   questions: any[];
   isExpired?: boolean;   // virtual, computed in backend
 }
+
+export interface Participant {
+  id?: string;
+  email: string;
+  surveyId: string;
+  accessToken: string;
+  invitedAt?: string | null;
+}

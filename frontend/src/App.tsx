@@ -1,10 +1,12 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import AdminHome from './pages/AdminHome';
 import AdminSurveys from './pages/AdminSurveys';
 import SurveyForm from './pages/SurveyForm';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import SurveyAcess from './pages/Survey';
+import ParticipantManagement from './pages/ParticipantManagement';
 
 
 function App() {
@@ -14,6 +16,7 @@ function App() {
         {
         <Route path="/login" element={<Login />} />
         }
+        <Route path="/admin" element={<AdminHome />} /> 
         <Route
           path="/admin/surveys"
           element={
@@ -47,6 +50,14 @@ function App() {
           element={<SurveyAcess />}
           />
         <Route path="/" element={<Navigate to="/admin/surveys" />} />
+        <Route
+          path="/admin/participants"
+          element={
+            <ProtectedRoute redirectTo="/login">
+              <ParticipantManagement />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

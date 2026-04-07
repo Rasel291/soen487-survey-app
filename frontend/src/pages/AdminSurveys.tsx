@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { Survey } from '../types/survey';
+import { useNavigate } from 'react-router-dom';
 
 const AdminSurveys: React.FC = () => {
+    const navigate = useNavigate();
     const [surveys, setSurveys] = useState<Survey[]>([]);
     const [loading, setLoading] = useState(true);
     const [showLinkModal, setShowLinkModal] = useState(false);
@@ -71,6 +73,15 @@ const AdminSurveys: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 py-8">
+            {/* Back Button */}
+            <div className="mb-6 pl-6">
+                <button
+                    onClick={() => navigate('/admin')}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium text-sm transition"
+                >
+                    ← Back to Dashboard
+                </button>
+            </div>
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-3xl font-bold text-slate-800">Surveys</h1>
