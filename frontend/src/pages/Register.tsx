@@ -1,19 +1,27 @@
 import React, { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
 
-const Login: React.FC = () => {
+const Register: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate("/admin/surveys");
+      await createUserWithEmailAndPassword(auth, email, password);
+      navigate("/login");
     } catch (err: any) {
       setError(err.message);
     }
@@ -24,7 +32,7 @@ const Login: React.FC = () => {
       <div className="max-w-md w-full bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="px-6 py-8">
           <h2 className="text-center text-3xl font-bold text-slate-800 mb-6">
-            Admin Login
+            Create Account
           </h2>
           {error && (
             <div className="mb-6 bg-rose-50 border-l-4 border-rose-500 p-4 rounded">
@@ -64,20 +72,33 @@ const Login: React.FC = () => {
                 required
               />
             </div>
+            <div>
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Confirm Password
+              </label>
+              <input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 focus:border-indigo-500"
+                required
+              />
+            </div>
             <button
               type="submit"
               className="w-full bg-indigo-600 text-white py-2.5 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition"
             >
-              Sign in
+              Register
             </button>
           </form>
           <p className="mt-4 text-center text-sm text-gray-600">
-            Don't have an account?{" "}
-            <a
-              href="/register"
-              className="text-indigo-600 hover:underline font-medium"
-            >
-              Create one
+            Already have an account?{" "}
+            <a href="/login" className="text-indigo-600 hover:underline">
+              Sign in
             </a>
           </p>
         </div>
@@ -86,4 +107,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default Register;

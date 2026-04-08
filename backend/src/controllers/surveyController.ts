@@ -25,7 +25,7 @@ export const formatSurvey = (doc: admin.firestore.DocumentSnapshot): Survey | nu
         publicLinkToken: data.publicLinkToken || null,
         createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : null,
         createdBy: data.createdBy,
-        questions: data.questions || [],
+        questions: Array.isArray(data.questions) ? data.questions : [],
         isExpired: expiryDate ? expiryDate < new Date() : false,
     };
 };
@@ -143,7 +143,7 @@ export const updateSurvey = async (req: Request, res: Response) => {
         if (!doc.exists) {
             return res.status(404).json({ error: 'Survey not found' });
         }
-
+        
         const updates: any = {};
         if (title !== undefined) updates.title = title.trim();
         if (description !== undefined) updates.description = description.trim();
